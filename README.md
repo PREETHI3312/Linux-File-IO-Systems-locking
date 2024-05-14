@@ -21,285 +21,143 @@ Execute the C Program for the desired output.
 
 # PROGRAM:
 
-## Write a C program that illustrates two processes communicating using shared memory.
-//shmry1.c
-
-#include<unistd.h> 
-
-#include<stdlib.h>
-
-#include<stdio.h> 
-
-#include<string.h>
-
-#include<sys/shm.h>
-
-#define TEXT_SZ 2048
-
-struct shared_use_st
-
-{
-
-int written_by_you;
-
-char some_text[TEXT_SZ];
-
-};
-
+## 1.To Write a C program that illustrates files copying 
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
 int main()
-
 {
+char block[1024];
+int in, out;
+int nread;
+in = open("filecopy.c", O_RDONLY);
+out = open("file.out", O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
+while((nread = read(in,block,sizeof(block))) > 0)
+write(out,block,nread);
+exit(0);}
 
-int running = 1;
+##OUTPUT
+$ gcc -o filecopy.o filecopy.c
+$ ls -l file.out1 
+-rw------- 1 gganesh gganesh 317 Aug  2 06:52 file.out1
 
-void *shared_memory = (void *)0; 
+$ diff filecopy1.c file.out1
 
-struct shared_use_st *shared_stuff; 
 
-int shmid;
 
-srand( (unsigned int)getpid() ); 
 
-shmid = shmget( (key_t)1234, sizeof(struct shared_use_st), 0666 |IPC_CREAT );
+## 2.To Write a C program that illustrates files locking
 
-printf("Shared memory id is %d \n",shmid);
+#include <fcntl.h>
 
-if (shmid == -1)
+#include <stdio.h>
 
-{
+#include <string.h>
 
-fprintf(stderr, "shmget failed\n");
+#include <unistd.h>
 
-exit(EXIT_FAILURE);
+#include <sys/file.h>
 
-}
+int main (int argc, char* argv[])
 
-shared_memory = shmat(shmid,(void *)0, 0); if (shared_memory == (void *)-1)
+{ char* file = argv[1];
 
-{
-
-fprintf(stderr,	"shmat	failed\n"); exit(EXIT_FAILURE);
-
-}
-
-printf("Memory Attached at %x\n", (int)shared_memory);
-
-shared_stuff = (struct shared_use_st *) shared_memory;
-
-shared_stuff->written_by_you	=	0;
-
- while(running)
+ int fd;
  
-{
+ struct flock lock;
+ 
+ printf ("opening %s\n", file);
+ 
+ /* Open a file descriptor to the file. */
+ 
+ fd = open (file, O_WRONLY);
+ 
+// acquire shared lock
 
-if(shared_stuff->written_by_you)
+if (flock(fd, LOCK_SH) == -1) {
 
-{
+    printf("error");
+    
+}else
 
-printf("You Wrote: %s", shared_stuff->some_text);
-
-sleep( rand() %4 );
-
-shared_stuff->written_by_you = 0;
-
-if (strncmp(shared_stuff->some_text, "end", 3)== 0){
-
-running = 0;}}
-
-}
-
-if (shmdt(shared_memory) == -1)
-
-
-{
-
-fprintf(stderr, "shmdt failed\n"); exit(EXIT_FAILURE);
+{printf("Acquiring shared lock using flock");
 
 }
 
-if (shmctl(shmid, IPC_RMID, 0) == -1)
+getchar();
 
-{
+// non-atomically upgrade to exclusive lock
 
-fprintf(stderr, "failed to delete\n");
+// do it in non-blocking mode, i.e. fail if can't upgrade immediately
 
-exit(EXIT_FAILURE);
+if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
 
-} exit(EXIT_SUCCESS);
+    printf("error");
+    
+}else
 
-}
+{printf("Acquiring exclusive lock using flock");}
 
+getchar();
 
+// release lock
 
+// lock is also released automatically when close() is called or process exits
 
+if (flock(fd, LOCK_UN) == -1) {
 
-//shmry2.c
+    printf("error");
+    
+}else{
 
-#include<unistd.h> 
-
-#include<stdlib.h> 
-
-#include<stdio.h> 
-
-#include<string.h>
-
-#include<sys/shm.h>
-
-#define TEXT_SZ 2048 
-
-struct shared_use_st{
-
-int written_by_you;
-
-char some_text[TEXT_SZ];
-
-};
-
-int main()
-
-{
-
-int running =1;
-
-void *shared_memory = (void *)0; 
-
-struct shared_use_st *shared_stuff; 
-
-char buffer[BUFSIZ];
-
-int shmid;
-
-shmid	=shmget(	(key_t)1234,	sizeof(struct shared_use_st), 0666 | IPC_CREAT);
-
-printf("Shared memory id = %d \n",shmid);
-
-if (shmid == -1)
-
-{
-
-fprintf(stderr, "shmget failed\n"); exit(EXIT_FAILURE);
+printf("unlocking");
 
 }
 
-shared_memory=shmat(shmid, (void *)0, 0);
+getchar();
 
-if (shared_memory == (void *)-1){
+close (fd);
 
-fprintf(stderr,	"shmat	failed\n"); exit(EXIT_FAILURE);}
-
-printf("Memory Attached at %x\n", (int) shared_memory);
-
-shared_stuff = (struct shared_use_st *)shared_memory; 
-
-while(running)
-
-{
-
-while(shared_stuff->written_by_you== 1)
-
-{
-
-sleep(1);
-
-printf("waiting for client.	\n");
+return 0;
 
 }
-
-printf("Enter Some Text: "); fgets (buffer, BUFSIZ, stdin);
-
-strncpy(shared_stuff->some_text, buffer, TEXT_SZ);
-
-shared_stuff->written_by_you = 1;
-
-if(strncmp(buffer, "end", 3) == 0){
-
-running = 0;}}
-
-if (shmdt(shared_memory) == -1)
-
-{
-fprintf(stderr, "shmdt failed\n"); exit(EXIT_FAILURE);
-
-} exit(EXIT_SUCCESS);
-
-}
-
-
 
 ## OUTPUT
-In the first terminal execute
+$ gcc -o lock.o lock.c
 
-$./shm2.o 
+$ ./lock.o tricky.txt 
 
-Shared memort id = 48 
+opening tricky.txt
 
-Memory Attached at 25194000
+Acquiring shared lock using flock
 
-Enter Some Text: hello
+Acquiring exclusive lock using flock
 
-waiting for client.
+Unlocking
 
-waiting for client.
+$ lslocks 
+COMMAND           PID  TYPE SIZE MODE  M START END PATH
+:
+VBoxClient       1826 POSIX   5B WRITE 0     0  0 /home/gganesh/.vboxclient-draganddrop.pid
+update-notifier  2405 FLOCK   0B WRITE 0     0   0 /run/user/1000/update-notifier.pid
+lock2.o          3130 FLOCK  41B READ  0     0   0 /home/gganesh/class/2ndunit/tricky.txt
 
-Enter Some Text: world
+$ lslocks 
+COMMAND           PID  TYPE SIZE MODE  M START END PATH
+:
+lock2.o          3130 FLOCK  41B WRITE 0     0   0 /home/gganesh/class/2ndunit/tricky.txt
 
-waiting for client.
-
-Enter Some Text: nd
-
-waiting for client.	
-
-Enter Some Text: end
-
-
-Then in second terminal execute
-
-$./shm1.o
-
-Shared memory id is 48 
-
-Memory Attached at 8d7de000
-
-You Wrote: hello
-
-You Wrote: world
-
-You Wrote: nd
-
-You Wrote: end
-
-
-
-
-
-
-
-$ipcs
-
------- Message Queues --------
-key        msqid      owner      perms      used-bytes   messages    
-
------- Shared Memory Segments --------
-key        shmid      owner      perms      bytes      nattch     status      
-0x00000000 9          user       600        524288     2          dest         
-0x00000000 12         user       600        16777216   2          dest         
-0x00000000 15         user       600        524288     2          dest         
-0x00000000 18         user       600        524288     2          dest         
-0x00000000 21         user       600        524288     2          dest         
-0x00000000 24         user       600        16777216   2          dest         
-0x00000000 30         user       600        524288     2          dest         
-0x00000000 33         user       600        524288     2          dest         
-0x00000000 41         user       600        33554432   2          dest         
-0x00000000 45         user       600        16777216   2          dest         
-0x00000000 46         user       600        524288     2          dest         
-0x000004d2 48         user       666        2052       2                       
-0x00000000 59         user       600        33554432   2          dest         
-0x00000000 60         user       600        524288     2          dest         
-
------- Semaphore Arrays --------
-key        semid      owner      perms      nsems     
 
 
 
 # RESULT:
-The program is executed successfully.
+The programs are executed successfully.
+
+
+
+
+
+
+
+
