@@ -151,7 +151,9 @@ Unlocking
 
 $ lslocks 
 COMMAND           PID  TYPE SIZE MODE  M START END PATH
+
 :
+
 VBoxClient       1826 POSIX   5B WRITE 0     0  0 /home/gganesh/.vboxclient-draganddrop.pid
 
 update-notifier  2405 FLOCK   0B WRITE 0     0   0 /run/user/1000/update-notifier.pid
