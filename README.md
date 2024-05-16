@@ -23,21 +23,34 @@ Execute the C Program for the desired output.
 
 ## 1.To Write a C program that illustrates files copying 
 #include <unistd.h>
+
 #include <sys/stat.h>
+
 #include <fcntl.h>
+
 #include <stdlib.h>
+
 int main()
+
 {
+
 char block[1024];
+
 int in, out;
+
 int nread;
+
 in = open("filecopy.c", O_RDONLY);
+
 out = open("file.out", O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
+
 while((nread = read(in,block,sizeof(block))) > 0)
+
 write(out,block,nread);
+
 exit(0);}
 
-##OUTPUT
+## OUTPUT
 $ gcc -o filecopy.o filecopy.c
 $ ls -l file.out1 
 -rw------- 1 gganesh gganesh 317 Aug  2 06:52 file.out1
@@ -140,12 +153,17 @@ $ lslocks
 COMMAND           PID  TYPE SIZE MODE  M START END PATH
 :
 VBoxClient       1826 POSIX   5B WRITE 0     0  0 /home/gganesh/.vboxclient-draganddrop.pid
+
 update-notifier  2405 FLOCK   0B WRITE 0     0   0 /run/user/1000/update-notifier.pid
+
 lock2.o          3130 FLOCK  41B READ  0     0   0 /home/gganesh/class/2ndunit/tricky.txt
 
 $ lslocks 
+
 COMMAND           PID  TYPE SIZE MODE  M START END PATH
+
 :
+
 lock2.o          3130 FLOCK  41B WRITE 0     0   0 /home/gganesh/class/2ndunit/tricky.txt
 
 
